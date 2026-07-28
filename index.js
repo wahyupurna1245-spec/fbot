@@ -1,79 +1,9 @@
-const { default: makeWASocket, DisconnectReason, fetchLatestBaileysVersion, initAuthCreds, proto } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 
-// --- FUNGSI SINGLE FILE AUTH (SESSION.JSON) ---
-const useSingleFileAuthState = (filename) => {
-    let creds, keys = {};
-    if (fs.existsSync(filename)) {
-        try {
-            const data = JSON.parse(fs.readFileSync(filename, 'utf-8'));
-            creds = data.creds;
-            keys = data.keys || {};
-        } catch (e) {
-            console.log("File session rusak, membuat baru...");
-        }
-    }
-
-    const saveState = () => {
-        fs.writeFileSync(filename, JSON.stringify({ creds, keys }, (key, value) => {
-            return Buffer.isBuffer(value) ? { type: 'Buffer', data: value.toJSON().data } : value;
-        }, 2));
-    };
-
-    if (!creds) {
-        creds = initAuthCreds();
-    } else {
-        const restoreBuffers = (obj) => {
-            for (let key in obj) {
-                if (obj[key] && typeof obj[key] === 'object') {
-                    if (obj[key].type === 'Buffer' && Array.isArray(obj[key].data)) {
-                        obj[key] = Buffer.from(obj[key].data);
-                    } else {
-                        restoreBuffers(obj[key]);
-                    }
-                }
-            }
-        };
-        restoreBuffers(creds);
-        restoreBuffers(keys);
-    }
-
-    return {
-        state: {
-            creds,
-            keys: {
-                get: (type, ids) => {
-                    if (!keys[type]) keys[type] = {};
-                    return ids.reduce((dict, id) => {
-                        let value = keys[type][id];
-                        if (value) {
-                            if (type === 'app-state-sync-key' && value) {
-                                value = proto.Message.AppStateSyncKeyData.fromObject(value);
-                            }
-                            dict[id] = value;
-                        }
-                        return dict;
-                    }, {});
-                },
-                set: (data) => {
-                    for (let type in data) {
-                        if (!keys[type]) keys[type] = {};
-                        for (let id in data[type]) {
-                            keys[type][id] = data[type][id];
-                        }
-                    }
-                    saveState();
-                }
-            }
-        },
-        saveCreds: saveState
-    };
-};
-// ------------------------------------------------
-
 async function startBot() {
-    const { state, saveCreds } = useSingleFileAuthState('./session.json');
+    const { state, saveCreds } = await useMultiFileAuthState('./session');
     const { version } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
@@ -95,8 +25,8 @@ async function startBot() {
             if (reason !== DisconnectReason.loggedOut) {
                 startBot();
             } else {
-                console.log('Perangkat telah keluar dari sesi, menghapus session.json...');
-                if (fs.existsSync('./session.json')) fs.unlinkSync('./session.json');
+                console.log('Perangkat telah keluar dari sesi, hapus folder session untuk pairing ulang.');
+                fs.rmSync('./session', { recursive: true, force: true });
             }
         }
     });
@@ -105,6 +35,7 @@ async function startBot() {
 
     // Cek dan minta pairing code otomatis setelah socket siap
     if (!sock.authState.creds.registered) {
+        // Beri jeda 3 detik agar koneksi WebSocket siap terlebih dahulu
         setTimeout(async () => {
             const phoneNumber = '628812478704';
             console.log(`Meminta kode pairing untuk nomor: ${phoneNumber}...`);
