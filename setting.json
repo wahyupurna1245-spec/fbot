@@ -1,4 +1,6 @@
 {
   "autoTyping": false,
-  "autoReadSw": true
+  "autoReadSw": true,
+  "autoReadGroup": false,
+  "autoReadPrivate": false
 }

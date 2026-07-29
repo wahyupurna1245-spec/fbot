@@ -3,6 +3,7 @@ const path = require('path');
 
 const modeFile = path.join(__dirname, 'mode.json');
 const settingFile = path.join(__dirname, 'setting.json');
+const pendingYT = {};
 
 module.exports = async (sock, mek, chatUpdate) => {
     try {
@@ -86,6 +87,23 @@ module.exports = async (sock, mek, chatUpdate) => {
         
         const prefix = /^[°•π÷×¶∆£¢€¥®™_=|~!?#/$%^&.+¬]/gi.test(budy) ? budy.match(/^[°•π÷×¶∆£¢€¥®™_=|~!?#/$%^&.+¬]/gi)[0] : '';
         const isCmd = budy.startsWith(prefix);
+        // HANDLE PILIHAN RESOLUSI YOUTUBE
+if (global.pendingYT && global.pendingYT[sender] && ['1','2','3','4','5','6'].includes(budy.trim())) {
+
+    const yt = require('./plugins/youtube.js');
+
+    await yt.download({
+        sock,
+        m,
+        sender,
+        pilihan: budy.trim(),
+        url: global.pendingYT[sender]
+    });
+
+    delete global.pendingYT[sender];
+    return;
+}
+//-------------------------
         const command = isCmd ? budy.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
         const args = budy.trim().split(/ +/).slice(1);
         const q = args.join(' ');
