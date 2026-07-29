@@ -1,19 +1,31 @@
-FROM node:lts-buster
+FROM node:20-bookworm
 
-RUN apt-get update && \
-  apt-get install -y \
-  ffmpeg \
-  imagemagick \
-  webp && \
-  apt-get upgrade -y && \
-  rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-COPY package.json .
+# Install tools media
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    imagemagick \
+    webp \
+    python3 \
+    python3-pip \
+    wget \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN npm install && npm install pm2 -g 
+# Install yt-dlp
+RUN pip3 install yt-dlp --break-system-packages \
+    && yt-dlp --version
 
+# Copy package files
+COPY package*.json ./
+
+# Install Node dependencies
+RUN npm install
+
+# Copy source code
 COPY . .
 
-EXPOSE 5000
-
-CMD ["npm", "start"]
+# Start bot
+CMD ["node", "index.js"]
