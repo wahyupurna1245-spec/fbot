@@ -274,7 +274,7 @@ module.exports = async (sock, mek, chatUpdate) => {
 
         let mode = {
             isSelf: false,
-            groupOnly: true,
+            groupOnly: false,
             privateOnly: false
         };
 
