@@ -1,66 +1,252 @@
 const os = require('os');
 const { performance } = require('perf_hooks');
 
+
 function formatSize(bytes) {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+    const units = [
+        'B',
+        'KB',
+        'MB',
+        'GB',
+        'TB'
+    ];
+
     let i = 0;
+
     while (bytes >= 1024 && i < units.length - 1) {
         bytes /= 1024;
         i++;
     }
+
     return `${bytes.toFixed(2)} ${units[i]}`;
 }
 
-function runtime(seconds) {
-    seconds = Number(seconds);
-    var d = Math.floor(seconds / (3600 * 24));
-    var h = Math.floor((seconds % (3600 * 24)) / 3600);
-    var m = Math.floor((seconds % 3600) / 60);
-    var s = Math.floor(seconds % 60);
-    var dDisplay = d > 0 ? d + "d " : "";
-    var hDisplay = h > 0 ? h + "h " : "";
-    var mDisplay = m > 0 ? m + "m " : "";
-    var sDisplay = s > 0 ? s + "s" : "";
-    return (dDisplay + hDisplay + mDisplay + sDisplay).trim() || "0s";
+
+
+function runtime(sec) {
+
+    let d = Math.floor(sec / 86400);
+    let h = Math.floor((sec % 86400) / 3600);
+    let m = Math.floor((sec % 3600) / 60);
+    let s = Math.floor(sec % 60);
+
+
+    return [
+        d ? `${d} Hari` : '',
+        h ? `${h} Jam` : '',
+        m ? `${m} Menit` : '',
+        s ? `${s} Detik` : ''
+    ]
+    .filter(Boolean)
+    .join(' ') || '0 Detik';
+
 }
 
-module.exports = {
-category: 'lainnya',
-    command: ['ping', 'p', 'test', 'speed', 'bot'],
-    operate: async ({ sock, m, sender }) => {
-        const start = performance.now();
-        
-        // Kirim pesan awal dengan gaya modern
-        let initialMsg = await sock.sendMessage(sender, { text: '🚀 *Mengukur kecepatan & performa sistem...* [■□□□□] 25%' }, { quoted: m });
-        
-        const end = performance.now();
-        const latency = (end - start).toFixed(2);
-
-        // Informasi Sistem (RAM, CPU, & Uptime)
-        const totalMem = os.totalmem();
-        const freeMem = os.freemem();
-        const usedMem = totalMem - freeMem;
-        const cpuCore = os.cpus().length;
-        const cpuModel = os.cpus()[0]?.model?.trim() || 'Generic CPU';
-        const uptime = runtime(process.uptime());
-        const platform = os.platform();
-
-        const caption = `INFO
-
-🏓 *Response Speed:* ${latency} ms
-⏱️ *Bot Uptime:* ${uptime}
-💻 *Platform:* ${platform.toUpperCase()} (${cpuCore} Core)
-🧠 *CPU Model:* ${cpuModel}
-📊 *RAM Usage:* ${formatSize(usedMem)} / ${formatSize(totalMem)} (${((usedMem / totalMem) * 100).toFixed(1)}%)
-💽 *Free RAM:* ${formatSize(freeMem)}
 
 
-*Status:* 🟢 Online & Stable`;
+function getCpuLoad() {
 
-        // Update pesan awal dengan hasil akhir yang keren
-        await sock.sendMessage(sender, { 
-            text: caption, 
-            edit: initialMsg.key 
-        });
+    const cpus = os.cpus();
+
+    let idle = 0;
+    let total = 0;
+
+
+    for (let cpu of cpus) {
+
+        for (let type in cpu.times) {
+            total += cpu.times[type];
+        }
+
+        idle += cpu.times.idle;
+
     }
+
+
+    return (
+        100 -
+        Math.round(
+            idle / total * 100
+        )
+    );
+
+}
+
+
+
+module.exports = {
+
+    category: 'tools',
+
+    command: [
+        'ping',
+        'test',
+        'speed',
+        'bot',
+        'status'
+    ],
+
+
+
+    operate: async ({
+        sock,
+        m,
+        sender
+    }) => {
+
+
+        const start =
+        performance.now();
+
+
+
+        let loading =
+        await sock.sendMessage(sender, {
+
+            text:
+`╭─「 ⚡ SYSTEM CHECK 」
+│
+│ 🔄 Mengambil data...
+│
+│ [■■■□□□□□□□] 30%
+╰────────────`
+
+        }, {
+            quoted: m
+        });
+
+
+
+        await new Promise(
+            resolve => setTimeout(resolve,700)
+        );
+
+
+
+        const ping =
+        (
+            performance.now()
+            -
+            start
+        )
+        .toFixed(2);
+
+
+
+        const totalRam =
+        os.totalmem();
+
+
+        const freeRam =
+        os.freemem();
+
+
+        const usedRam =
+        totalRam - freeRam;
+
+
+
+        const nodeMemory =
+        process.memoryUsage();
+
+
+
+        const cpu =
+        os.cpus();
+
+
+
+        const network =
+        Object.values(
+            os.networkInterfaces()
+        )
+        .flat()
+        .find(
+            x => x.family === 'IPv4'
+        );
+
+
+
+        const result =
+`
+╭━━「 🤖 BOT SYSTEM 」━━╮
+
+┃ 🟢 STATUS
+┃ ├ Online
+┃ └ Stable
+
+┃ 🏓 RESPONSE
+┃ └ ${ping} ms
+
+┃ ⏱️ UPTIME
+┃ └ ${runtime(process.uptime())}
+
+
+┃ ⚙️ PROCESS
+┃ ├ PID : ${process.pid}
+┃ ├ Node : ${process.version}
+┃ ├ RAM App : ${formatSize(nodeMemory.rss)}
+┃ ├ Heap Used : ${formatSize(nodeMemory.heapUsed)}
+┃ └ Heap Total : ${formatSize(nodeMemory.heapTotal)}
+
+
+┃ 🖥️ SERVER
+┃ ├ OS : ${os.type()}
+┃ ├ Platform : ${os.platform()}
+┃ ├ Architecture : ${os.arch()}
+┃ ├ Hostname : ${os.hostname()}
+┃ └ CPU Core : ${cpu.length}
+
+
+┃ 🔥 CPU
+┃ ├ Model :
+┃ │ ${cpu[0]?.model || 'Unknown'}
+┃ │
+┃ ├ Speed :
+┃ │ ${cpu[0]?.speed || 0} MHz
+┃ │
+┃ └ Load :
+┃   ${getCpuLoad()}%
+
+
+┃ 🧠 MEMORY
+┃ ├ Used :
+┃ │ ${formatSize(usedRam)}
+┃ │
+┃ ├ Free :
+┃ │ ${formatSize(freeRam)}
+┃ │
+┃ └ Total :
+┃   ${formatSize(totalRam)}
+
+
+┃ 🌐 NETWORK
+┃ └ IP :
+┃   ${network?.address || 'Unknown'}
+
+
+┃ 📅 SERVER TIME
+┃ └ ${new Date()
+.toLocaleString('id-ID')}
+
+
+╰━━━━━━━━━━━━━━╯
+
+🚀 Bot berjalan normal
+`;
+
+
+
+        await sock.sendMessage(sender, {
+
+            text: result,
+
+            edit: loading.key
+
+        });
+
+
+    }
+
 };
