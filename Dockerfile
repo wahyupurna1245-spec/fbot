@@ -2,7 +2,6 @@ FROM node:20-bookworm
 
 WORKDIR /app
 
-# Install tools media
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     imagemagick \
@@ -12,20 +11,25 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     git \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
+
+
+# Install Deno untuk yt-dlp
+RUN curl -fsSL https://deno.land/install.sh | sh
+
+ENV PATH="/root/.deno/bin:$PATH"
+
 
 # Install yt-dlp
 RUN pip3 install -U yt-dlp --break-system-packages \
     && yt-dlp --version
 
-# Copy package files
+
 COPY package*.json ./
 
-# Install Node dependencies
 RUN npm install
 
-# Copy source code
 COPY . .
 
-# Start bot
 CMD ["node", "index.js"]
