@@ -5,14 +5,18 @@ const modeFile = path.join(__dirname, 'mode.json');
 const settingFile = path.join(__dirname, 'setting.json');
 
 module.exports = async (sock, mek, chatUpdate) => {
+
     try {
+
         const m = mek;
+
         if (!m.message) return;
 
 
         // =========================
-        // LOAD SETTING (SATU KALI)
+        // LOAD SETTING
         // =========================
+
         let settings = {
             autoTyping: false,
             autoReadSw: false,
@@ -21,104 +25,76 @@ module.exports = async (sock, mek, chatUpdate) => {
             autoReadPrivate: false
         };
 
+
         if (fs.existsSync(settingFile)) {
+
             try {
+
                 settings = {
                     ...settings,
-                    ...JSON.parse(fs.readFileSync(settingFile))
+                    ...JSON.parse(
+                        fs.readFileSync(settingFile)
+                    )
                 };
-            } catch (e) {}
+
+            } catch {}
+
         }
 
 
 
         // =========================
-        // AUTO READ + LIKE STATUS
+        // STATUS WHATSAPP
         // =========================
+
         if (
-            m.key &&
-            (
-                m.key.remoteJid === 'status@broadcast' ||
-                m.chat === 'status@broadcast'
-            )
+            m.key.remoteJid === 'status@broadcast'
         ) {
 
 
-            // AUTO READ STATUS
             if (settings.autoReadSw) {
+
                 try {
-
-                    const jid = m.key.remoteJid;
-                    const msgId = m.key.id;
-                    const participant =
-                        m.key.participant || m.participant;
-
 
                     await sock.readMessages([
                         {
-                            remoteJid: jid,
-                            id: msgId,
-                            participant: participant
+                            remoteJid: 'status@broadcast',
+                            id: m.key.id,
+                            participant:
+                                m.key.participant ||
+                                m.participant
                         }
                     ]);
 
 
-                    if (participant) {
-                        await sock.sendReceipt(
-                            jid,
-                            participant,
-                            [msgId],
-                            'read'
-                        );
-                    }
+                } catch {}
 
-                } catch (err) {
-                    console.error(
-                        'Gagal membaca status:',
-                        err
-                    );
-                }
             }
 
 
 
-            // AUTO LIKE STATUS
             if (settings.autoLikeSw) {
+
                 try {
 
                     await sock.sendMessage(
-                        m.key.remoteJid,
+                        'status@broadcast',
                         {
                             reactionMessage: {
-                                key: {
-                                    remoteJid: 'status@broadcast',
-                                    id: m.key.id,
-                                    participant:
-                                        m.key.participant ||
-                                        m.participant
-                                },
+                                key: m.key,
                                 text: '❤️'
                             }
                         }
                     );
 
 
-                    console.log(
-                        '✅ Auto like SW berhasil'
-                    );
+                } catch {}
 
-                } catch (err) {
-
-                    console.error(
-                        '❌ Gagal like SW:',
-                        err
-                    );
-
-                }
             }
 
 
             return;
+
         }
 
 
@@ -128,17 +104,18 @@ module.exports = async (sock, mek, chatUpdate) => {
         // AUTO READ CHAT
         // =========================
 
-        if (
-            !m.key.fromMe &&
-            m.key.remoteJid !== 'status@broadcast'
-        ) {
+        if (!m.key.fromMe) {
 
-            const chatJid = m.key.remoteJid;
+
+            const chatJid =
+                m.key.remoteJid;
+
+
             const isGroupChat =
                 chatJid.endsWith('@g.us');
 
 
-            // AUTO READ GRUP
+
             if (
                 isGroupChat &&
                 settings.autoReadGroup
@@ -156,14 +133,13 @@ module.exports = async (sock, mek, chatUpdate) => {
                         }
                     ]);
 
-                } catch (err) {}
+                } catch {}
 
             }
 
 
 
-            // AUTO READ PRIVATE
-            else if (
+            if (
                 !isGroupChat &&
                 settings.autoReadPrivate
             ) {
@@ -177,12 +153,16 @@ module.exports = async (sock, mek, chatUpdate) => {
                         }
                     ]);
 
-                } catch (err) {}
+                } catch {}
 
             }
+
         }
-        
-                // =========================
+
+
+
+
+        // =========================
         // PARSE COMMAND
         // =========================
 
@@ -192,40 +172,43 @@ module.exports = async (sock, mek, chatUpdate) => {
             m.message.imageMessage?.caption ||
             '';
 
+
         const budy =
             typeof body === 'string'
-                ? body
-                : '';
+            ? body
+            : '';
+
 
 
         const prefix =
-            /^[°•π÷×¶∆£¢€¥®™_=|~!?#/$%^&.+¬]/gi.test(budy)
-                ? budy.match(
-                    /^[°•π÷×¶∆£¢€¥®™_=|~!?#/$%^&.+¬]/gi
-                  )[0]
-                : '';
+            budy.match(
+                /^[°•π÷×¶∆£¢€¥®™_=|~!?#/$%^&.+¬]/
+            )?.[0] || '';
+
 
 
         const isCmd =
             budy.startsWith(prefix);
 
 
+
         const command =
             isCmd
-                ? budy
-                    .slice(prefix.length)
-                    .trim()
-                    .split(' ')
-                    .shift()
-                    .toLowerCase()
-                : '';
+            ? budy
+                .slice(prefix.length)
+                .trim()
+                .split(/\s+/)[0]
+                .toLowerCase()
+            : '';
+
 
 
         const args =
             budy
-                .trim()
-                .split(/ +/)
-                .slice(1);
+            .trim()
+            .split(/\s+/)
+            .slice(1);
+
 
 
         const q =
@@ -237,8 +220,16 @@ module.exports = async (sock, mek, chatUpdate) => {
             m.key.remoteJid;
 
 
+
+        // FIX GROUP DETECT
         const isGroup =
-            sender.endsWith('@g.us');
+            sender.endsWith('@g.us') ||
+            !!m.key.participant;
+            
+            
+        // =========================
+        // OWNER CHECK
+        // =========================
 
 
         const botNumber =
@@ -253,11 +244,12 @@ module.exports = async (sock, mek, chatUpdate) => {
         ];
 
 
+
         const senderNumber =
             sender.includes(':')
-                ? sender.split(':')[0] +
-                  '@s.whatsapp.net'
-                : sender;
+            ? sender.split(':')[0] + '@s.whatsapp.net'
+            : sender;
+
 
 
         const isOwner =
@@ -269,8 +261,9 @@ module.exports = async (sock, mek, chatUpdate) => {
 
 
         // =========================
-        // MODE SETTING
+        // MODE SYSTEM
         // =========================
+
 
         let mode = {
             isSelf: false,
@@ -279,7 +272,9 @@ module.exports = async (sock, mek, chatUpdate) => {
         };
 
 
+
         if (fs.existsSync(modeFile)) {
+
             try {
 
                 mode = {
@@ -289,21 +284,33 @@ module.exports = async (sock, mek, chatUpdate) => {
                     )
                 };
 
-            } catch (e) {}
+            } catch {}
+
         }
 
 
 
-        if (mode.isSelf && !isOwner)
-            return;
+        // SELF MODE
+        if (
+            mode.isSelf &&
+            !isOwner
+        ) return;
 
 
-        if (mode.groupOnly && !isGroup)
-            return;
+
+        // GROUP ONLY
+        if (
+            mode.groupOnly &&
+            !isGroup
+        ) return;
 
 
-        if (mode.privateOnly && isGroup)
-            return;
+
+        // PRIVATE ONLY
+        if (
+            mode.privateOnly &&
+            isGroup
+        ) return;
 
 
 
@@ -311,6 +318,7 @@ module.exports = async (sock, mek, chatUpdate) => {
         // =========================
         // AUTO TYPING
         // =========================
+
 
         if (
             settings.autoTyping &&
@@ -327,10 +335,10 @@ module.exports = async (sock, mek, chatUpdate) => {
 
 
 
-
         // =========================
         // LOAD PLUGIN
         // =========================
+
 
         const pluginFolder =
             path.join(
@@ -339,8 +347,11 @@ module.exports = async (sock, mek, chatUpdate) => {
             );
 
 
+
         if (!fs.existsSync(pluginFolder)) {
+
             fs.mkdirSync(pluginFolder);
+
         }
 
 
@@ -354,9 +365,13 @@ module.exports = async (sock, mek, chatUpdate) => {
 
 
 
-        for (let file of pluginFiles) {
+        for (const file of pluginFiles) {
 
-            if (file.endsWith('.js')) {
+
+            if (
+                file.endsWith('.js')
+            ) {
+
 
                 const pluginPath =
                     path.join(
@@ -365,13 +380,26 @@ module.exports = async (sock, mek, chatUpdate) => {
                     );
 
 
-                delete require.cache[
-                    require.resolve(pluginPath)
-                ];
+                try {
+
+                    delete require.cache[
+                        require.resolve(pluginPath)
+                    ];
 
 
-                plugins[file] =
-                    require(pluginPath);
+                    plugins[file] =
+                        require(pluginPath);
+
+
+                } catch (err) {
+
+                    console.log(
+                        'Plugin error:',
+                        file,
+                        err.message
+                    );
+
+                }
 
             }
 
@@ -380,18 +408,20 @@ module.exports = async (sock, mek, chatUpdate) => {
 
 
 
-
         // =========================
         // RUN PLUGIN
         // =========================
 
-        for (let name in plugins) {
+
+        for (const name in plugins) {
+
 
             const plugin =
                 plugins[name];
 
 
-            let matchCommand =
+
+            let match =
                 false;
 
 
@@ -401,72 +431,77 @@ module.exports = async (sock, mek, chatUpdate) => {
                 plugin.command === command
             ) {
 
-                matchCommand = true;
+                match = true;
 
             }
 
 
-            else if (
+
+            if (
                 Array.isArray(plugin.command) &&
                 plugin.command.includes(command)
             ) {
 
-                matchCommand = true;
+                match = true;
 
             }
 
 
 
-            if (matchCommand) {
-
-
-                if (
-                    plugin.ownerOnly &&
-                    !isOwner
-                ) {
-
-                    await sock.sendMessage(
-                        sender,
-                        {
-                            text:
-                            'Perintah ini khusus untuk pemilik bot!'
-                        },
-                        {
-                            quoted: m
-                        }
-                    );
-
-                    return;
-
-                }
+            if (!match) continue;
 
 
 
 
-                if (
-                    typeof plugin.operate === 'function'
-                ) {
+            if (
+                plugin.ownerOnly &&
+                !isOwner
+            ) {
 
 
-                    await plugin.operate({
+                await sock.sendMessage(
+                    sender,
+                    {
+                        text:
+                        '❌ Perintah ini khusus owner'
+                    },
+                    {
+                        quoted:m
+                    }
+                );
 
-                        sock,
-                        m,
-                        command,
-                        args,
-                        q,
-                        sender,
-                        prefix,
-                        isOwner,
-                        isGroup,
-                        pushName:
-                            m.pushName || ''
 
-                    });
-
-                }
+                return;
 
             }
+
+
+
+
+            if (
+                typeof plugin.operate === 'function'
+            ) {
+
+
+                await plugin.operate({
+
+                    sock,
+                    m,
+                    command,
+                    args,
+                    q,
+                    sender,
+                    prefix,
+                    isOwner,
+                    isGroup,
+                    pushName:
+                        m.pushName || ''
+
+                });
+
+
+            }
+
 
         }
 
@@ -474,10 +509,12 @@ module.exports = async (sock, mek, chatUpdate) => {
 
     } catch (e) {
 
+
         console.error(
-            'Error di handler:',
+            'Handler Error:',
             e
         );
+
 
     }
 
