@@ -2,5 +2,6 @@
   "autoTyping": false,
   "autoReadSw": true,
   "autoReadGroup": false,
-  "autoReadPrivate": false
+  "autoReadPrivate": false,
+  "autoLikeSw": false
 }
