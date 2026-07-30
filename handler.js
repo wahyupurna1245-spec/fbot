@@ -1,40 +1,296 @@
-const fs = require('fs');
-const path = require('path');
 
-const modeFile = path.join(__dirname, 'mode.json');
-const settingFile = path.join(__dirname, 'setting.json');
+        // =========================
+        // OWNER CHECK
+        // =========================
 
-module.exports = async (sock, mek, chatUpdate) => {
-    try {
-        const m = mek;
-        if (!m.message) return;
+
+        const botNumber =
+            sock.user.id.split(':')[0] +
+            '@s.whatsapp.net';
+
+
+
+        const ownerNumbers = [
+            '628812478704@s.whatsapp.net',
+            botNumber
+        ];
+
+
+
+        const senderNumber =
+            sender.includes(':')
+            ? sender.split(':')[0] + '@s.whatsapp.net'
+            : sender;
+
+
+
+        const isOwner =
+            ownerNumbers.includes(senderNumber) ||
+            ownerNumbers.includes(m.key.participant) ||
+            m.key.fromMe;
+
+
 
 
         // =========================
-        // LOAD SETTING (SATU KALI)
+        // MODE SYSTEM
         // =========================
-        let settings = {
-            autoTyping: false,
-            autoReadSw: false,
-            autoLikeSw: false,
-            autoReadGroup: false,
-            autoReadPrivate: false
+
+
+        let mode = {
+            isSelf: false,
+            groupOnly: false,
+            privateOnly: false
         };
 
-        if (fs.existsSync(settingFile)) {
+
+
+        if (fs.existsSync(modeFile)) {
+
             try {
-                settings = {
-                    ...settings,
-                    ...JSON.parse(fs.readFileSync(settingFile))
+
+                mode = {
+                    ...mode,
+                    ...JSON.parse(
+                        fs.readFileSync(modeFile)
+                    )
                 };
-            } catch (e) {}
+
+            } catch {}
+
         }
 
 
 
+        // SELF MODE
+        if (
+            mode.isSelf &&
+            !isOwner
+        ) return;
+
+
+
+        // GROUP ONLY
+        if (
+            mode.groupOnly &&
+            !isGroup
+        ) return;
+
+
+
+        // PRIVATE ONLY
+        if (
+            mode.privateOnly &&
+            isGroup
+        ) return;
+
+
+
+
         // =========================
-        // AUTO READ + LIKE STATUS
+        // AUTO TYPING
         // =========================
+
+
+        if (
+            settings.autoTyping &&
+            isCmd
+        ) {
+
+            await sock.sendPresenceUpdate(
+                'composing',
+                sender
+            );
+
+        }
+
+
+
+
+        // =========================
+        // LOAD PLUGIN
+        // =========================
+
+
+        const pluginFolder =
+            path.join(
+                __dirname,
+                'plugins'
+            );
+
+
+
+        if (!fs.existsSync(pluginFolder)) {
+
+            fs.mkdirSync(pluginFolder);
+
+        }
+
+
+
+        const pluginFiles =
+            fs.readdirSync(pluginFolder);
+
+
+
+        const plugins = {};
+
+
+
+        for (const file of pluginFiles) {
+
+
+            if (
+                file.endsWith('.js')
+            ) {
+
+
+                const pluginPath =
+                    path.join(
+                        pluginFolder,
+                        file
+                    );
+
+
+                try {
+
+                    delete require.cache[
+                        require.resolve(pluginPath)
+                    ];
+
+
+                    plugins[file] =
+                        require(pluginPath);
+
+
+                } catch (err) {
+
+                    console.log(
+                        'Plugin error:',
+                        file,
+                        err.message
+                    );
+
+                }
+
+            }
+
+        }
+
+
+
+
+        // =========================
+        // RUN PLUGIN
+        // =========================
+
+
+        for (const name in plugins) {
+
+
+            const plugin =
+                plugins[name];
+
+
+
+            let match =
+                false;
+
+
+
+            if (
+                typeof plugin.command === 'string' &&
+                plugin.command === command
+            ) {
+
+                match = true;
+
+            }
+
+
+
+            if (
+                Array.isArray(plugin.command) &&
+                plugin.command.includes(command)
+            ) {
+
+                match = true;
+
+            }
+
+
+
+            if (!match) continue;
+
+
+
+
+            if (
+                plugin.ownerOnly &&
+                !isOwner
+            ) {
+
+
+                await sock.sendMessage(
+                    sender,
+                    {
+                        text:
+                        '❌ Perintah ini khusus owner'
+                    },
+                    {
+                        quoted:m
+                    }
+                );
+
+
+                return;
+
+            }
+
+
+
+
+            if (
+                typeof plugin.operate === 'function'
+            ) {
+
+
+                await plugin.operate({
+
+                    sock,
+                    m,
+                    command,
+                    args,
+                    q,
+                    sender,
+                    prefix,
+                    isOwner,
+                    isGroup,
+                    pushName:
+                        m.pushName || ''
+
+                });
+
+
+            }
+
+
+        }
+
+
+
+    } catch (e) {
+
+
+        console.error(
+            'Handler Error:',
+            e
+        );
+
+
+    }
+
+};        // =========================
         if (
             m.key &&
             (
