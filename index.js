@@ -177,9 +177,9 @@ sock.ev.on('group-participants.update', async (update) => {
 
 
             const user =
-                typeof participant === 'string'
-                ? participant
-                : participant.id;
+    typeof participant === 'string'
+    ? participant
+    : participant.id || participant.jid || participant.phoneNumber;
 
 
 
@@ -205,11 +205,14 @@ sock.ev.on('group-participants.update', async (update) => {
 
 
 
-            const foto =
-                await sock.profilePictureUrl(
-                    user,
-                    'image'
-                ).catch(() => null);
+            let foto = null;
+
+try {
+    foto = await sock.profilePictureUrl(
+        user,
+        'image'
+    );
+} catch {}
 
 
 
