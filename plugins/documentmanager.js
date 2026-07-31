@@ -12,178 +12,237 @@ module.exports = {
 
     operate: async ({ sock, m, sender, args }) => {
 
-        const folder = __dirname;
-
-        const action = args[0]?.toLowerCase();
+        try {
 
 
-        const allowed = [
-
-    // Dokumen
-    '.txt',
-    '.json',
-    '.pdf',
-    '.doc',
-    '.docx',
-    '.xls',
-    '.xlsx',
-    '.ppt',
-    '.pptx',
-    '.csv',
-
-    // Gambar
-    '.png',
-    '.jpg',
-    '.jpeg',
-    '.webp',
-    '.gif',
-    '.bmp',
-    '.svg',
-
-    // Audio
-    '.mp3',
-    '.opus',
-    '.ogg',
-    '.wav',
-    '.m4a',
-    '.aac',
-    '.flac',
-
-    // Video
-    '.mp4',
-    '.mkv',
-    '.avi',
-    '.mov',
-    '.webm',
-    '.3gp',
-
-    // Arsip
-    '.zip',
-    '.rar',
-    '.7z',
-    '.tar',
-    '.gz',
-
-    // File kode
-    '.html',
-    '.css',
-    '.xml',
-    '.sql',
-
-    // Lainnya
-    '.apk',
-    '.iso',
-    '.bin'
-        ];
-
-
-
-        // =====================
-        // LIST DOCUMENT
-        // =====================
-        if (!action || action === 'list') {
-
-            const files = fs.readdirSync(folder)
-                .filter(f =>
-                    allowed.includes(
-                        path.extname(f).toLowerCase()
-                    )
+            const folder =
+                path.join(
+                    __dirname,
+                    '../media'
                 );
 
 
-            return sock.sendMessage(sender,{
-                text:
-`📂 *DOCUMENT MANAGER*
+            if (!fs.existsSync(folder)) {
 
-${files.length ?
-files.map((v,i)=>`${i+1}. ${v}`).join('\n')
+                fs.mkdirSync(
+                    folder,
+                    {
+                        recursive: true
+                    }
+                );
+
+            }
+
+
+
+            const action =
+                args[0]?.toLowerCase();
+
+
+
+            const allowed = [
+
+                // Dokumen
+                '.txt',
+                '.json',
+                '.pdf',
+                '.doc',
+                '.docx',
+                '.xls',
+                '.xlsx',
+                '.ppt',
+                '.pptx',
+                '.csv',
+
+                // Gambar
+                '.png',
+                '.jpg',
+                '.jpeg',
+                '.webp',
+                '.gif',
+                '.bmp',
+                '.svg',
+
+                // Audio
+                '.mp3',
+                '.opus',
+                '.ogg',
+                '.wav',
+                '.m4a',
+                '.aac',
+                '.flac',
+
+                // Video
+                '.mp4',
+                '.mkv',
+                '.avi',
+                '.mov',
+                '.webm',
+                '.3gp',
+
+                // Arsip
+                '.zip',
+                '.rar',
+                '.7z',
+                '.tar',
+                '.gz',
+
+                // Kode
+                '.html',
+                '.css',
+                '.xml',
+                '.sql',
+
+                // Lainnya
+                '.apk',
+                '.iso',
+                '.bin'
+
+            ];
+
+
+
+
+            // =====================
+            // LIST
+            // =====================
+
+            if (!action || action === 'list') {
+
+
+                const files =
+                    fs.readdirSync(folder)
+                    .filter(f =>
+                        allowed.includes(
+                            path.extname(f)
+                            .toLowerCase()
+                        )
+                    );
+
+
+
+                return sock.sendMessage(
+                    sender,
+                    {
+                        text:
+`📂 *MEDIA MANAGER*
+
+${
+files.length
+?
+files.map((v,i)=>
+`${i+1}. ${v}`
+).join('\n')
 :
-'Tidak ada dokumen'}
+'Tidak ada file'
+}
 
-Total: ${files.length}`
-            },{quoted:m});
+Total:
+${files.length}`
+                    },
+                    {
+                        quoted:m
+                    }
+                );
 
-        }
+
+            }
 
 
 
 
 
-        // =====================
-        // ADD DOCUMENT
-        // =====================
-        if(action === 'add') {
+            // =====================
+            // ADD
+            // =====================
 
-            try {
+            if (action === 'add') {
+
 
                 const quoted =
-                m.message.extendedTextMessage
-                ?.contextInfo
-                ?.quotedMessage;
+                    m.message
+                    ?.extendedTextMessage
+                    ?.contextInfo
+                    ?.quotedMessage;
 
 
-                if(!quoted?.documentMessage) {
 
-                    return sock.sendMessage(sender,{
-                        text:
+                if (!quoted?.documentMessage) {
+
+
+                    return sock.sendMessage(
+                        sender,
+                        {
+                            text:
 `❌ Reply file dokumen
 
 Cara:
 1. Kirim file sebagai dokumen
 2. Reply:
 .document add`
-                    },{quoted:m});
+                        },
+                        {
+                            quoted:m
+                        }
+                    );
 
                 }
 
 
 
-                const doc = quoted.documentMessage;
+                const doc =
+                    quoted.documentMessage;
+
 
 
                 const fileName =
-                doc.fileName ||
-                `file-${Date.now()}`;
+                    doc.fileName ||
+                    `file-${Date.now()}`;
 
 
 
                 const ext =
-                path.extname(fileName)
-                .toLowerCase();
+                    path.extname(fileName)
+                    .toLowerCase();
 
 
 
-                if(!allowed.includes(ext)) {
+                if (!allowed.includes(ext)) {
 
-                    return sock.sendMessage(sender,{
-                        text:
+
+                    return sock.sendMessage(
+                        sender,
+                        {
+                            text:
 `❌ Format tidak didukung
 
-Format:
 ${allowed.join(', ')}`
-                    },{quoted:m});
+                        },
+                        {
+                            quoted:m
+                        }
+                    );
 
                 }
 
 
 
-
                 const buffer =
-                await downloadMediaMessage(
-                    {
-                        message: quoted
-                    },
-                    'buffer',
-                    {}
-                );
+                    await downloadMediaMessage(
+                        {
+                            message: quoted
+                        },
+                        'buffer',
+                        {}
+                    );
 
 
 
                 const save =
-                path.join(
-                    folder,
-                    fileName
-                );
+                    path.join(
+                        folder,
+                        fileName
+                    );
 
 
 
@@ -194,139 +253,172 @@ ${allowed.join(', ')}`
 
 
 
-                return sock.sendMessage(sender,{
-                    text:
-`✅ Dokumen berhasil disimpan
+                return sock.sendMessage(
+                    sender,
+                    {
+                        text:
+`✅ File berhasil disimpan
 
 📁 ${fileName}
 
 Lokasi:
-plugins/${fileName}`
-                },{quoted:m});
+media/${fileName}`
+                    },
+                    {
+                        quoted:m
+                    }
+                );
 
-
-
-            } catch(err) {
-
-                console.log(err);
-
-                return sock.sendMessage(sender,{
-                    text:
-`❌ Gagal menyimpan
-
-${err.message}`
-                },{quoted:m});
 
             }
 
-        }
 
 
 
 
+            // =====================
+            // DELETE
+            // =====================
 
-        // =====================
-        // DELETE DOCUMENT
-        // =====================
-        if(action === 'del') {
-
-
-            const file = args[1];
+            if (action === 'del') {
 
 
-            if(!file) {
+                const file =
+                    args[1];
 
-                return sock.sendMessage(sender,{
-                    text:
+
+                if (!file) {
+
+                    return sock.sendMessage(
+                        sender,
+                        {
+                            text:
 `Contoh:
-.document del gambar.png`
-                },{quoted:m});
 
-            }
+.document del gambar.jpg`
+                        },
+                        {
+                            quoted:m
+                        }
+                    );
 
-
-
-            const target =
-            path.join(
-                folder,
-                file
-            );
+                }
 
 
 
-            if(!fs.existsSync(target)) {
-
-                return sock.sendMessage(sender,{
-                    text:
-                    '❌ File tidak ditemukan'
-                },{quoted:m});
-
-            }
+                const target =
+                    path.join(
+                        folder,
+                        file
+                    );
 
 
 
-            fs.unlinkSync(target);
+                if (!fs.existsSync(target)) {
+
+
+                    return sock.sendMessage(
+                        sender,
+                        {
+                            text:
+                            '❌ File tidak ditemukan'
+                        },
+                        {
+                            quoted:m
+                        }
+                    );
+
+                }
 
 
 
-            return sock.sendMessage(sender,{
-                text:
+                fs.unlinkSync(target);
+
+
+
+                return sock.sendMessage(
+                    sender,
+                    {
+                        text:
 `✅ ${file} berhasil dihapus`
-            },{quoted:m});
-
-        }
-
-
-
-
-
-        // =====================
-        // INFO DOCUMENT
-        // =====================
-        if(action === 'info') {
+                    },
+                    {
+                        quoted:m
+                    }
+                );
 
 
-            const file = args[1];
+            }
 
 
-            if(!file) {
 
-                return sock.sendMessage(sender,{
-                    text:
+
+
+            // =====================
+            // INFO
+            // =====================
+
+            if (action === 'info') {
+
+
+                const file =
+                    args[1];
+
+
+                if (!file) {
+
+                    return sock.sendMessage(
+                        sender,
+                        {
+                            text:
 `Contoh:
+
 .document info menu.jpg`
-                },{quoted:m});
+                        },
+                        {
+                            quoted:m
+                        }
+                    );
 
-            }
-
-
-
-            const target =
-            path.join(
-                folder,
-                file
-            );
+                }
 
 
 
-            if(!fs.existsSync(target)) {
-
-                return sock.sendMessage(sender,{
-                    text:
-                    '❌ File tidak ditemukan'
-                },{quoted:m});
-
-            }
+                const target =
+                    path.join(
+                        folder,
+                        file
+                    );
 
 
 
-            const size =
-            fs.statSync(target).size;
+                if (!fs.existsSync(target)) {
+
+
+                    return sock.sendMessage(
+                        sender,
+                        {
+                            text:
+                            '❌ File tidak ditemukan'
+                        },
+                        {
+                            quoted:m
+                        }
+                    );
+
+                }
 
 
 
-            return sock.sendMessage(sender,{
-                text:
+                const size =
+                    fs.statSync(target).size;
+
+
+
+                return sock.sendMessage(
+                    sender,
+                    {
+                        text:
 `📄 *FILE INFO*
 
 Nama:
@@ -334,26 +426,60 @@ ${file}
 
 Ukuran:
 ${(size / 1024).toFixed(2)} KB`
-            },{quoted:m});
+                    },
+                    {
+                        quoted:m
+                    }
+                );
 
-        }
+
+            }
 
 
 
 
 
-        return sock.sendMessage(sender,{
-            text:
+            return sock.sendMessage(
+                sender,
+                {
+                    text:
 `❌ Perintah tidak dikenal
 
-📂 DOCUMENT MANAGER
+📂 MEDIA MANAGER
 
 .document list
 .document add
 .document del nama.file
 .document info nama.file`
-        },{quoted:m});
+                },
+                {
+                    quoted:m
+                }
+            );
 
+
+
+        } catch (err) {
+
+
+            console.log(
+                'Document Error:',
+                err
+            );
+
+
+            return sock.sendMessage(
+                sender,
+                {
+                    text:
+                    '❌ Terjadi error'
+                },
+                {
+                    quoted:m
+                }
+            );
+
+        }
 
     }
 
