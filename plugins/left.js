@@ -9,131 +9,135 @@ module.exports = {
 
     category: 'group',
 
+
     operate: async ({ sock, m, sender, args, isGroup, isOwner }) => {
 
         try {
 
+
             if (!isGroup) {
+
                 return sock.sendMessage(
                     sender,
                     {
-                        text: '❌ Fitur ini hanya untuk grup'
+                        text:
+                        '❌ Fitur ini hanya untuk grup'
                     },
                     {
                         quoted:m
                     }
                 );
+
             }
+
 
 
             if (!isOwner) {
+
                 return sock.sendMessage(
                     sender,
                     {
-                        text: '❌ Khusus owner bot'
+                        text:
+                        '❌ Khusus owner bot'
                     },
                     {
                         quoted:m
                     }
                 );
+
             }
+
+
 
 
             let left = {};
 
+
             if (fs.existsSync(leftFile)) {
+
                 try {
-                    left = JSON.parse(
+
+                    left =
+                    JSON.parse(
                         fs.readFileSync(leftFile)
                     );
+
                 } catch {}
+
             }
 
 
-            const groupId = m.key.remoteJid;
-            const action = args[0]?.toLowerCase();
+
+
+            const groupId =
+                m.key.remoteJid;
+
+
+            const action =
+                args[0]?.toLowerCase();
 
 
 
-            if (action === 'on') {
 
-                left[groupId] = true;
 
-                fs.writeFileSync(
-                    leftFile,
-                    JSON.stringify(left, null, 2)
-                );
+            // CEK STATUS
 
+            if (!action) {
 
                 return sock.sendMessage(
                     sender,
                     {
                         text:
-`✅ Left aktif
+`📌 Status Left Grup
 
-Member keluar akan mendapat pesan perpisahan`
-                    },
-                    {
-                        quoted:m
-                    }
-                );
-
-            }
+Status:
+${left[groupId] ? '✅ ON' : '❌ OFF'}
 
 
-
-            if (action === 'off') {
-
-                delete left[groupId];
-
-                fs.writeFileSync(
-                    leftFile,
-                    JSON.stringify(left, null, 2)
-                );
-
-
-                return sock.sendMessage(
-                    sender,
-                    {
-                        text:
-                        '✅ Left dimatikan di grup ini'
-                    },
-                    {
-                        quoted:m
-                    }
-                );
-
-            }
-
-
-
-            return sock.sendMessage(
-                sender,
-                {
-                    text:
-`Cara:
+Cara pakai:
 
 .left on
 ➡️ Aktifkan pesan member keluar
 
 .left off
 ➡️ Matikan left`
-                },
-                {
-                    quoted:m
-                }
-            );
+                    },
+                    {
+                        quoted:m
+                    }
+                );
+
+            }
 
 
-        } catch (err) {
 
-            console.log(
-                'Left error:',
-                err
-            );
 
-        }
 
-    }
 
-};
+
+            // AKTIFKAN
+
+            if (action === 'on') {
+
+
+                left[groupId] = true;
+
+
+                fs.writeFileSync(
+                    leftFile,
+                    JSON.stringify(
+                        left,
+                        null,
+                        2
+                    )
+                );
+
+
+
+                return sock.sendMessage(
+                    sender,
+                    {
+                        text:
+`✅ Left ON
+
+📌 Grup

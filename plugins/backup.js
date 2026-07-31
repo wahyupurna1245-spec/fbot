@@ -1,6 +1,6 @@
 const fs = require('fs');
-const path = require('path');
 const { exec } = require('child_process');
+
 
 module.exports = {
 
@@ -31,89 +31,123 @@ module.exports = {
                 'setting.json',
                 'mode.json',
                 'welcome.json',
-                'left.json'
+                'left.json',
+                'session.json'
             ];
 
 
-            const existFiles = files
-                .filter(f => fs.existsSync(f))
+            const target = files
+                .filter(file => fs.existsSync(file))
                 .join(' ');
 
 
 
-            const cmd =
-                `zip -r ${backupName} ${existFiles} -x "node_modules/*" "session.json"`;
+            await sock.sendMessage(
+                sender,
+                {
+                    text:
+                    '⏳ Membuat backup...'
+                },
+                {
+                    quoted:m
+                }
+            );
 
 
-            exec(cmd, async (err) => {
+
+            exec(
+                `zip -r ${backupName} ${target} -x "node_modules/*"`,
+                async (err) => {
 
 
-                if (err) {
+                    if (err) {
 
-                    console.log(
-                        'Backup error:',
-                        err
-                    );
+                        console.log(
+                            'Backup error:',
+                            err
+                        );
 
-                    return sock.sendMessage(
+
+                        return sock.sendMessage(
+                            sender,
+                            {
+                                text:
+                                '❌ Backup gagal\n' + err.message
+                            },
+                            {
+                                quoted:m
+                            }
+                        );
+
+                    }
+
+
+
+                    if (!fs.existsSync(backupName)) {
+
+                        return sock.sendMessage(
+                            sender,
+                            {
+                                text:
+                                '❌ File backup tidak ditemukan'
+                            },
+                            {
+                                quoted:m
+                            }
+                        );
+
+                    }
+
+
+
+                    await sock.sendMessage(
                         sender,
                         {
-                            text:
-                            '❌ Backup gagal'
+                            document:
+                                fs.readFileSync(
+                                    backupName
+                                ),
+
+                            fileName:
+                                backupName,
+
+                            mimetype:
+                                'application/zip',
+
+                            caption:
+`✅ Backup berhasil
+
+📦 Isi:
+✔ plugins
+✔ media
+✔ tmp
+✔ session
+✔ config bot
+
+❌ node_modules tidak ikut`
                         },
                         {
                             quoted:m
                         }
                     );
 
+
+
+                    fs.unlinkSync(
+                        backupName
+                    );
+
+
                 }
+            );
 
 
+        } catch (err) {
 
-                await sock.sendMessage(
-                    sender,
-                    {
-                        document:
-                            fs.readFileSync(
-                                backupName
-                            ),
-
-                        fileName:
-                            backupName,
-
-                        mimetype:
-                            'application/zip',
-
-                        caption:
-`✅ Backup berhasil
-
-📦 Isi:
-- plugins
-- media
-- config
-- source bot
-
-❌ session tidak ikut`
-                    },
-                    {
-                        quoted:m
-                    }
-                );
-
-
-
-                fs.unlinkSync(
-                    backupName
-                );
-
-
-            });
-
-
-
-        } catch (e) {
-
-            console.log(e);
+            console.log(
+                'Backup error:',
+                err
+            );
 
         }
 

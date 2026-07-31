@@ -9,6 +9,7 @@ module.exports = {
 
     category: 'group',
 
+
     operate: async ({ sock, m, sender, args, isGroup, isOwner }) => {
 
         try {
@@ -19,11 +20,10 @@ module.exports = {
                 return sock.sendMessage(
                     sender,
                     {
-                        text:
-                        '❌ Fitur ini hanya untuk grup'
+                        text: '❌ Fitur ini hanya untuk grup'
                     },
                     {
-                        quoted:m
+                        quoted: m
                     }
                 );
 
@@ -31,39 +31,30 @@ module.exports = {
 
 
 
-            // hanya owner bot
             if (!isOwner) {
 
                 return sock.sendMessage(
                     sender,
                     {
-                        text:
-                        '❌ Khusus owner bot'
+                        text: '❌ Khusus owner bot'
                     },
                     {
-                        quoted:m
+                        quoted: m
                     }
                 );
 
             }
-
-
-
-            const action =
-                args[0]?.toLowerCase();
 
 
 
             let welcome = {};
 
 
-
             if (fs.existsSync(welcomeFile)) {
 
                 try {
 
-                    welcome =
-                    JSON.parse(
+                    welcome = JSON.parse(
                         fs.readFileSync(welcomeFile)
                     );
 
@@ -73,10 +64,45 @@ module.exports = {
 
 
 
-            const groupId =
-                m.key.remoteJid;
+            const groupId = m.key.remoteJid;
+
+            const action = args[0]?.toLowerCase();
 
 
+
+            // CEK STATUS
+
+            if (!action) {
+
+                return sock.sendMessage(
+                    sender,
+                    {
+                        text:
+`📌 Status Welcome Grup
+
+Status:
+${welcome[groupId] ? '✅ ON' : '❌ OFF'}
+
+
+Cara pakai:
+
+.welcome on
+➡️ Aktifkan welcome
+
+.welcome off
+➡️ Matikan welcome`
+                    },
+                    {
+                        quoted:m
+                    }
+                );
+
+            }
+
+
+
+
+            // AKTIFKAN
 
             if (action === 'on') {
 
@@ -98,9 +124,9 @@ module.exports = {
                     sender,
                     {
                         text:
-`✅ Welcome aktif
+`✅ Welcome ON
 
-📌 Grup ini sekarang akan mengirim pesan saat ada member baru masuk`
+📌 Grup ini sekarang aktif mengirim pesan member masuk`
                     },
                     {
                         quoted:m
@@ -111,6 +137,10 @@ module.exports = {
             }
 
 
+
+
+
+            // MATIKAN
 
             if (action === 'off') {
 
@@ -132,14 +162,18 @@ module.exports = {
                     sender,
                     {
                         text:
-                        '✅ Welcome dimatikan di grup ini'
+`✅ Welcome OFF
+
+📌 Grup ini tidak akan mengirim pesan welcome lagi`
                     },
                     {
                         quoted:m
                     }
                 );
 
+
             }
+
 
 
 
@@ -147,19 +181,17 @@ module.exports = {
                 sender,
                 {
                     text:
-`Cara pakai:
+`❌ Perintah tidak dikenal
 
+Contoh:
+.welcome
 .welcome on
-➡️ Aktifkan welcome grup
-
-.welcome off
-➡️ Matikan welcome grup`
+.welcome off`
                 },
                 {
                     quoted:m
                 }
             );
-
 
 
         } catch (err) {
