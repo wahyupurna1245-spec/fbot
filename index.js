@@ -138,8 +138,6 @@ function randomKata() {
 
 sock.ev.on('group-participants.update', async (update) => {
 
-    console.log('GROUP UPDATE:', update);
-
     try {
 
         const { id, participants, action } = update;
@@ -169,6 +167,7 @@ sock.ev.on('group-participants.update', async (update) => {
 
 
 
+        // hanya grup yang welcome/left ON
         if (!data[id]) return;
 
 
@@ -177,9 +176,11 @@ sock.ev.on('group-participants.update', async (update) => {
 
 
             const user =
-    typeof participant === 'string'
-    ? participant
-    : participant.id || participant.jid || participant.phoneNumber;
+                typeof participant === 'string'
+                ? participant
+                : participant.id ||
+                  participant.jid ||
+                  participant.phoneNumber;
 
 
 
@@ -187,17 +188,24 @@ sock.ev.on('group-participants.update', async (update) => {
 
 
 
-            const nomor =
+            let nomor =
                 user.split('@')[0];
 
 
 
-            const nama =
-                nomor;
+            // rapikan nomor
+            if (
+                !nomor.startsWith('62') &&
+                !nomor.startsWith('0')
+            ) {
+
+                nomor = '62' + nomor;
+
+            }
 
 
 
-            const info =
+            let info =
                 await sock.fetchStatus(user)
                 .catch(() => ({
                     status: 'Tidak ada info'
@@ -207,12 +215,15 @@ sock.ev.on('group-participants.update', async (update) => {
 
             let foto = null;
 
-try {
-    foto = await sock.profilePictureUrl(
-        user,
-        'image'
-    );
-} catch {}
+            try {
+
+                foto =
+                await sock.profilePictureUrl(
+                    user,
+                    'image'
+                );
+
+            } catch {}
 
 
 
@@ -225,7 +236,6 @@ try {
                 caption =
 `Selamat datang @${nomor}
 
-Nama: ${nama}
 Nomor: ${nomor}
 Info: ${info.status || 'Tidak ada info'}
 
@@ -238,7 +248,6 @@ Info: ${info.status || 'Tidak ada info'}
                 caption =
 `Sampai jumpa @${nomor}
 
-Nama: ${nama}
 Nomor: ${nomor}
 Info: ${info.status || 'Tidak ada info'}
 
@@ -250,15 +259,14 @@ Info: ${info.status || 'Tidak ada info'}
 
             if (foto) {
 
-
                 await sock.sendMessage(
                     id,
                     {
-                        image:{
+                        image: {
                             url: foto
                         },
                         caption,
-                        mentions:[
+                        mentions: [
                             user
                         ]
                     }
@@ -272,12 +280,11 @@ Info: ${info.status || 'Tidak ada info'}
                     id,
                     {
                         text: caption,
-                        mentions:[
+                        mentions: [
                             user
                         ]
                     }
                 );
-
 
             }
 
