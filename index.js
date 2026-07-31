@@ -102,7 +102,87 @@ async function startBot() {
     });
 
     sock.ev.on('creds.update', saveCreds);
+    
+// =========================
+// WELCOME & LEFT SYSTEM
+// =========================
 
+sock.ev.on('group-participants.update', async (update) => {
+
+    try {
+
+        const { id, participants, action } = update;
+
+
+        if (action !== 'add' && action !== 'remove') return;
+
+
+        const file =
+            action === 'add'
+            ? './welcome.json'
+            : './left.json';
+
+
+        if (!fs.existsSync(file)) return;
+
+
+        const data = JSON.parse(
+            fs.readFileSync(file)
+        );
+
+
+        if (!data[id]) return;
+
+
+
+        for (const user of participants) {
+
+
+            let text;
+
+
+            if (action === 'add') {
+
+                text =
+`👋 Selamat datang @${user.split('@')[0]}
+
+Semoga betah di grup ini 😊`;
+
+            } else {
+
+
+                text =
+`👋 Sampai jumpa @${user.split('@')[0]}
+
+Terima kasih sudah bergabung 🙏`;
+
+            }
+
+
+
+            await sock.sendMessage(
+                id,
+                {
+                    text,
+                    mentions:[user]
+                }
+            );
+
+
+        }
+
+
+    } catch (err) {
+
+        console.log(
+            'Welcome Left Error:',
+            err
+        );
+
+    }
+
+});
+/////÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷
     // Cek dan minta pairing code otomatis setelah socket siap
     if (!sock.authState.creds.registered) {
         setTimeout(async () => {
