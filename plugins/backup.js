@@ -1,12 +1,13 @@
-const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-
+const { exec } = require('child_process');
 
 module.exports = {
 
     command: ['backup'],
+
     category: 'owner',
+
     ownerOnly: true,
 
 
@@ -14,122 +15,105 @@ module.exports = {
 
         try {
 
-            await sock.sendMessage(sender,{
-                text:
-                '⏳ Membuat backup semua file bot...'
-            },{quoted:m});
+            const backupName =
+                `backup-${Date.now()}.zip`;
 
 
+            const files = [
+                'plugins',
+                'media',
+                'tmp',
+                'handler.js',
+                'index.js',
+                'package.json',
+                'package-lock.json',
+                'Dockerfile',
+                'setting.json',
+                'mode.json',
+                'welcome.json',
+                'left.json'
+            ];
 
-            const folder =
-                process.cwd();
 
-
-
-            const fileName =
-                `FBot-backup-${Date.now()}.zip`;
-
-
-
-            const zipPath =
-                path.join(
-                    '/tmp',
-                    fileName
-                );
+            const existFiles = files
+                .filter(f => fs.existsSync(f))
+                .join(' ');
 
 
 
             const cmd =
-`cd "${folder}" && zip -r "${zipPath}" . \
--x "node_modules/*" \
--x "*.zip"`;
+                `zip -r ${backupName} ${existFiles} -x "node_modules/*" "session.json"`;
 
 
-
-            exec(
-                cmd,
-                async (err, stdout, stderr) => {
+            exec(cmd, async (err) => {
 
 
-                    if(err){
+                if (err) {
 
-                        console.log(
-                            'BACKUP ERROR:',
-                            stderr
-                        );
+                    console.log(
+                        'Backup error:',
+                        err
+                    );
 
-
-                        return sock.sendMessage(sender,{
+                    return sock.sendMessage(
+                        sender,
+                        {
                             text:
-`❌ Gagal membuat backup
+                            '❌ Backup gagal'
+                        },
+                        {
+                            quoted:m
+                        }
+                    );
 
-Pastikan Dockerfile sudah ada:
-zip`
-                        },{quoted:m});
-
-                    }
-
-
-
-                    if(!fs.existsSync(zipPath)){
-
-
-                        return sock.sendMessage(sender,{
-                            text:
-                            '❌ File backup tidak ditemukan'
-                        },{quoted:m});
-
-                    }
+                }
 
 
 
-
-                    await sock.sendMessage(sender,{
+                await sock.sendMessage(
+                    sender,
+                    {
                         document:
-                            fs.readFileSync(zipPath),
+                            fs.readFileSync(
+                                backupName
+                            ),
+
+                        fileName:
+                            backupName,
 
                         mimetype:
                             'application/zip',
 
-                        fileName:
-                            fileName,
-
                         caption:
-`✅ *FBot Backup Berhasil*
+`✅ Backup berhasil
 
-📦 File:
-${fileName}
+📦 Isi:
+- plugins
+- media
+- config
+- source bot
 
-📁 Semua file dibackup
-
-❌ Kecuali:
-node_modules`
-                    },{quoted:m});
-
-
-
-                    fs.unlinkSync(zipPath);
-
-
-                }
-            );
+❌ session tidak ikut`
+                    },
+                    {
+                        quoted:m
+                    }
+                );
 
 
 
-        } catch(e){
+                fs.unlinkSync(
+                    backupName
+                );
 
 
-            console.log(
-                'BACKUP ERROR:',
-                e
-            );
+            });
 
 
-            await sock.sendMessage(sender,{
-                text:
-                '❌ Error membuat backup'
-            },{quoted:m});
 
+        } catch (e) {
+
+            console.log(e);
 
         }
 
