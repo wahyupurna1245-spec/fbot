@@ -107,6 +107,35 @@ async function startBot() {
 // WELCOME & LEFT SYSTEM
 // =========================
 
+const kataFile = './media/kata.json';
+
+
+function randomKata() {
+
+    try {
+
+        const kata = JSON.parse(
+            fs.readFileSync(kataFile)
+        );
+
+
+        return kata[
+            Math.floor(
+                Math.random() * kata.length
+            )
+        ];
+
+
+    } catch {
+
+        return 'Tetap semangat dan terus berkembang.';
+
+    }
+
+}
+
+
+
 sock.ev.on('group-participants.update', async (update) => {
 
     try {
@@ -114,7 +143,11 @@ sock.ev.on('group-participants.update', async (update) => {
         const { id, participants, action } = update;
 
 
-        if (action !== 'add' && action !== 'remove') return;
+        if (
+            action !== 'add' &&
+            action !== 'remove'
+        ) return;
+
 
 
         const file =
@@ -123,7 +156,9 @@ sock.ev.on('group-participants.update', async (update) => {
             : './left.json';
 
 
+
         if (!fs.existsSync(file)) return;
+
 
 
         const data = JSON.parse(
@@ -131,42 +166,115 @@ sock.ev.on('group-participants.update', async (update) => {
         );
 
 
+
         if (!data[id]) return;
 
 
 
-        for (const user of participants) {
+        for (const participant of participants) {
 
 
-            let text;
+            const user =
+                typeof participant === 'string'
+                ? participant
+                : participant.id;
+
+
+
+            if (!user) continue;
+
+
+
+            const nomor =
+                user.split('@')[0];
+
+
+
+            const nama =
+                nomor;
+
+
+
+            const info =
+                await sock.fetchStatus(user)
+                .catch(() => ({
+                    status: 'Tidak ada info'
+                }));
+
+
+
+            const foto =
+                await sock.profilePictureUrl(
+                    user,
+                    'image'
+                ).catch(() => null);
+
+
+
+            let caption;
+
 
 
             if (action === 'add') {
 
-                text =
-`👋 Selamat datang @${user.split('@')[0]}
+                caption =
+`Selamat datang @${nomor}
 
-`;
+Nama: ${nama}
+Nomor: ${nomor}
+Info: ${info.status || 'Tidak ada info'}
+
+💡 ${randomKata()}`;
+
 
             } else {
 
 
-                text =
-`👋 Sampai jumpa @${user.split('@')[0]}
+                caption =
+`Sampai jumpa @${nomor}
 
-Terima kasih sudah bergabung 🙏`;
+Nama: ${nama}
+Nomor: ${nomor}
+Info: ${info.status || 'Tidak ada info'}
+
+💡 ${randomKata()}`;
 
             }
 
 
 
-            await sock.sendMessage(
-                id,
-                {
-                    text,
-                    mentions:[user]
-                }
-            );
+            if (foto) {
+
+
+                await sock.sendMessage(
+                    id,
+                    {
+                        image:{
+                            url: foto
+                        },
+                        caption,
+                        mentions:[
+                            user
+                        ]
+                    }
+                );
+
+
+            } else {
+
+
+                await sock.sendMessage(
+                    id,
+                    {
+                        text: caption,
+                        mentions:[
+                            user
+                        ]
+                    }
+                );
+
+
+            }
 
 
         }
