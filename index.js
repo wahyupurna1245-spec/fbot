@@ -138,6 +138,8 @@ function randomKata() {
 
 sock.ev.on('group-participants.update', async (update) => {
 
+    console.log('GROUP UPDATE:', update);
+
     try {
 
         const { id, participants, action } = update;
