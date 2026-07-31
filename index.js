@@ -146,7 +146,7 @@ sock.ev.on('group-participants.update', async (update) => {
                 text =
 `👋 Selamat datang @${user.split('@')[0]}
 
-Semoga betah di grup ini 😊`;
+`;
 
             } else {
 
