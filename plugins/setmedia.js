@@ -25,6 +25,7 @@ module.exports = {
                 ?.quotedMessage;
 
 
+
             if (!quoted) {
 
                 return sock.sendMessage(sender,{
@@ -32,13 +33,11 @@ module.exports = {
 `❌ Reply media dulu
 
 Contoh:
-1. Kirim gambar
-2. Reply:
+
+Kirim gambar lalu reply:
 .setimagebot
 
-Audio:
-1. Kirim audio/voice note
-2. Reply:
+Kirim audio/VN lalu reply:
 .setaudiobot`
                 },{quoted:m});
 
@@ -46,8 +45,23 @@ Audio:
 
 
 
-            const folder =
-                __dirname;
+            const mediaFolder =
+                path.join(
+                    process.cwd(),
+                    'media'
+                );
+
+
+
+            // buat folder media jika belum ada
+            if(!fs.existsSync(mediaFolder)){
+
+                fs.mkdirSync(
+                    mediaFolder,
+                    { recursive:true }
+                );
+
+            }
 
 
 
@@ -58,9 +72,7 @@ Audio:
             if(command === 'setimagebot'){
 
 
-                if(
-                    !quoted.imageMessage
-                ){
+                if(!quoted.imageMessage){
 
                     return sock.sendMessage(sender,{
                         text:
@@ -73,17 +85,15 @@ Audio:
                 fileName =
                 'menu.jpg';
 
-
             }
+
 
 
 
             if(command === 'setaudiobot'){
 
 
-                if(
-                    !quoted.audioMessage
-                ){
+                if(!quoted.audioMessage){
 
                     return sock.sendMessage(sender,{
                         text:
@@ -112,16 +122,16 @@ Audio:
 
 
 
-            const save =
+            const savePath =
             path.join(
-                folder,
+                mediaFolder,
                 fileName
             );
 
 
 
             fs.writeFileSync(
-                save,
+                savePath,
                 buffer
             );
 
@@ -129,13 +139,13 @@ Audio:
 
             await sock.sendMessage(sender,{
                 text:
-`✅ Berhasil mengubah media bot
+`✅ Media bot berhasil diganti
 
 📁 File:
 ${fileName}
 
-Lokasi:
-plugins/${fileName}`
+📂 Lokasi:
+media/${fileName}`
             },{quoted:m});
 
 
@@ -148,7 +158,7 @@ plugins/${fileName}`
             );
 
 
-            sock.sendMessage(sender,{
+            await sock.sendMessage(sender,{
                 text:
                 '❌ Gagal menyimpan media'
             },{quoted:m});
