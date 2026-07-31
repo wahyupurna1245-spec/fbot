@@ -104,7 +104,7 @@ async function startBot() {
     sock.ev.on('creds.update', saveCreds);
     
 // =========================
-// WELCOME & LEFT SYSTEM
+// WELCOME SYSTEM
 // =========================
 
 const kataFile = './media/kata.json';
@@ -140,35 +140,35 @@ sock.ev.on('group-participants.update', async (update) => {
 
     try {
 
-        const { id, participants, action } = update;
+        const {
+            id,
+            participants,
+            action
+        } = update;
 
 
-        if (
-            action !== 'add' &&
-            action !== 'remove'
-        ) return;
-
-
-
-        const file =
-            action === 'add'
-            ? './welcome.json'
-            : './left.json';
+        // hanya member masuk
+        if (action !== 'add') return;
 
 
 
-        if (!fs.existsSync(file)) return;
+        // cek welcome.json
+        const welcomeFile = './welcome.json';
+
+
+        if (!fs.existsSync(welcomeFile)) return;
 
 
 
-        const data = JSON.parse(
-            fs.readFileSync(file)
-        );
+        const welcome =
+            JSON.parse(
+                fs.readFileSync(welcomeFile)
+            );
 
 
 
-        // hanya grup yang welcome/left ON
-        if (!data[id]) return;
+        // hanya grup yang welcome ON
+        if (!welcome[id]) return;
 
 
 
@@ -188,32 +188,27 @@ sock.ev.on('group-participants.update', async (update) => {
 
 
 
-            let nomor =
+            const nomor =
                 user.split('@')[0];
 
 
 
-            // rapikan nomor
-            if (
-                !nomor.startsWith('62') &&
-                !nomor.startsWith('0')
-            ) {
-
-                nomor = '62' + nomor;
-
-            }
+            let info = {
+                status: 'Tidak ada info'
+            };
 
 
+            try {
 
-            let info =
-                await sock.fetchStatus(user)
-                .catch(() => ({
-                    status: 'Tidak ada info'
-                }));
+                info =
+                await sock.fetchStatus(user);
+
+            } catch {}
 
 
 
             let foto = null;
+
 
             try {
 
@@ -227,37 +222,17 @@ sock.ev.on('group-participants.update', async (update) => {
 
 
 
-            let caption;
-
-
-
-            if (action === 'add') {
-
-                caption =
+            const caption =
 `Selamat datang @${nomor}
 
-Nomor: ${nomor}
 Info: ${info.status || 'Tidak ada info'}
 
 💡 ${randomKata()}`;
-
-
-            } else {
-
-
-                caption =
-`Sampai jumpa @${nomor}
-
-Nomor: ${nomor}
-Info: ${info.status || 'Tidak ada info'}
-
-💡 ${randomKata()}`;
-
-            }
 
 
 
             if (foto) {
+
 
                 await sock.sendMessage(
                     id,
@@ -266,7 +241,7 @@ Info: ${info.status || 'Tidak ada info'}
                             url: foto
                         },
                         caption,
-                        mentions: [
+                        mentions:[
                             user
                         ]
                     }
@@ -280,11 +255,12 @@ Info: ${info.status || 'Tidak ada info'}
                     id,
                     {
                         text: caption,
-                        mentions: [
+                        mentions:[
                             user
                         ]
                     }
                 );
+
 
             }
 
@@ -295,7 +271,7 @@ Info: ${info.status || 'Tidak ada info'}
     } catch (err) {
 
         console.log(
-            'Welcome Left Error:',
+            'Welcome Error:',
             err
         );
 
