@@ -1,6 +1,16 @@
-const { default: makeWASocket, DisconnectReason, fetchLatestBaileysVersion, initAuthCreds, proto } = require('@whiskeysockets/baileys');
+const { 
+    default: makeWASocket,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    initAuthCreds,
+    proto,
+    makeInMemoryStore
+} = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
+const store = makeInMemoryStore({
+    logger: pino({ level:'silent' })
+});
 
 // --- FUNGSI SINGLE FILE AUTH (SESSION.JSON) ---
 const useSingleFileAuthState = (filename) => {
@@ -83,6 +93,7 @@ async function startBot() {
         printQRInTerminal: false,
         syncFullHistory: true,
     });
+    store.bind(sock.ev);
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
