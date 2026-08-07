@@ -260,7 +260,7 @@ sock.ev.on('group-participants.update', async (update) => {
             const mek = chatUpdate.messages[0];
             if (!mek) return;
             
-            require('./handler')(sock, mek, chatUpdate);
+            require('./handler')(sock, mek, chatUpdate, store);
         } catch (err) {
             console.error('Error di messages.upsert:', err);
         }
