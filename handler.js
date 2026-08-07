@@ -4,7 +4,7 @@ const path = require('path');
 const modeFile = path.join(__dirname, 'mode.json');
 const settingFile = path.join(__dirname, 'setting.json');
 
-module.exports = async (sock, mek, chatUpdate) => {
+module.exports = async (sock, mek, chatUpdate, store) => {
 
     try {
 
@@ -495,7 +495,8 @@ module.exports = async (sock, mek, chatUpdate) => {
                     isOwner,
                     isGroup,
                     pushName:
-                        m.pushName || ''
+                        m.pushName || '',
+                    store
 
                 });
 
