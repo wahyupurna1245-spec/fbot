@@ -205,71 +205,83 @@ Status AFK kamu sudah dihapus.`
 
 
 // =========================
-// CEK MENTION USER AFK FIX
+// CEK MENTION AFK BAILEYS 7
 // =========================
 
-let contextInfo = null;
+const msgContent = m.message;
 
-if (m.message?.extendedTextMessage) {
-    contextInfo =
-    m.message.extendedTextMessage.contextInfo;
-}
-
-if (m.message?.imageMessage) {
-    contextInfo =
-    m.message.imageMessage.contextInfo;
-}
-
-if (m.message?.videoMessage) {
-    contextInfo =
-    m.message.videoMessage.contextInfo;
-}
+let contextInfo =
+    msgContent?.extendedTextMessage?.contextInfo ||
+    msgContent?.imageMessage?.contextInfo ||
+    msgContent?.videoMessage?.contextInfo ||
+    msgContent?.documentMessage?.contextInfo ||
+    msgContent?.stickerMessage?.contextInfo ||
+    null;
 
 
-const mentioned =
-contextInfo?.mentionedJid || [];
+const mentionedJid =
+    contextInfo?.mentionedJid || [];
 
 
-for (const jid of mentioned) {
+if (mentionedJid.length) {
 
-    if (afkData[jid]) {
+    for (const jid of mentionedJid) {
 
-        const data =
-        afkData[jid];
+        if (afkData[jid]) {
 
-
-        const menit =
-        Math.floor(
-            (Date.now() - data.waktu) / 60000
-        );
+            const afk =
+            afkData[jid];
 
 
-        await sock.sendMessage(
-            sender,
-            {
-                text:
+            const waktu =
+            Date.now() - afk.waktu;
+
+
+            let durasi =
+            Math.floor(
+                waktu / 60000
+            );
+
+
+            if (durasi < 1) {
+                durasi = 'baru saja';
+            } else {
+                durasi = durasi + ' menit';
+            }
+
+
+            await sock.sendMessage(
+                sender,
+                {
+                    text:
 `💤 *USER SEDANG AFK*
 
-👤 @${jid.split('@')[0]}
+👤 User:
+@${jid.split('@')[0]}
 
 📝 Alasan:
-${data.alasan}
+${afk.alasan}
 
 ⏰ Sejak:
-${menit} menit lalu`,
-                mentions: [jid]
-            },
-            {
-                quoted: m
-            }
-        );
+${durasi}`,
+                    
+                    mentions: [
+                        jid
+                    ]
+                },
+                {
+                    quoted: m
+                }
+            );
 
-        break;
+
+            break;
+
+        }
 
     }
 
 }
-
 
 
 
