@@ -6,6 +6,8 @@ module.exports = async (sock, mek, chatUpdate) => {
     try {
         const m = mek;
         if (!m.message) return;
+// Abaikan pesan dari bot sendiri
+if (m.key.fromMe) return;
         // =========================
         // LOAD SETTING
         // =========================
@@ -226,7 +228,10 @@ const mentionedJid =
 if (mentionedJid.length) {
 
     for (const jid of mentionedJid) {
-
+        //jangan cek bot sendiri
+        if (jid === sock.user.id.split(':')[0] + '@s.whatsapp.net') {
+    continue;
+}
         if (afkData[jid]) {
 
             const afk =
