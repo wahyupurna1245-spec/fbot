@@ -132,8 +132,74 @@ module.exports = async (sock, mek, chatUpdate) => {
             .slice(1);
         const q =
             args.join(' ');
+        //SENDER NYA
         const sender =
             m.key.remoteJid;
+
+        // =========================
+// AFK SYSTEM
+// =========================
+
+const afkFile =
+path.join(
+    __dirname,
+    'database/afk.json'
+);
+
+
+let afkData = {};
+
+try {
+
+    if (fs.existsSync(afkFile)) {
+
+        afkData =
+        JSON.parse(
+            fs.readFileSync(afkFile)
+        );
+
+    }
+
+} catch {}
+
+
+
+// Hapus AFK jika user chat lagi
+
+if (
+    afkData[sender] &&
+    !m.key.fromMe
+) {
+
+    delete afkData[sender];
+
+
+    fs.writeFileSync(
+        afkFile,
+        JSON.stringify(
+            afkData,
+            null,
+            2
+        )
+    );
+
+
+    await sock.sendMessage(
+        sender,
+        {
+            text:
+`👋 Selamat datang kembali
+
+Status AFK kamu sudah dihapus.`
+        },
+        {
+            quoted:m
+        }
+    );
+
+}
+        // ====================
+        
         // FIX GROUP DETECT
         const isGroup =
             sender.endsWith('@g.us') ||
