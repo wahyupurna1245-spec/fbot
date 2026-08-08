@@ -199,14 +199,35 @@ Status AFK kamu sudah dihapus.`
 
 }
         // ====================
-        // =========================
-// CEK MENTION USER AFK
+
+
+
+
+
+// =========================
+// CEK MENTION USER AFK FIX
 // =========================
 
+let contextInfo = null;
+
+if (m.message?.extendedTextMessage) {
+    contextInfo =
+    m.message.extendedTextMessage.contextInfo;
+}
+
+if (m.message?.imageMessage) {
+    contextInfo =
+    m.message.imageMessage.contextInfo;
+}
+
+if (m.message?.videoMessage) {
+    contextInfo =
+    m.message.videoMessage.contextInfo;
+}
+
+
 const mentioned =
-m.message?.extendedTextMessage
-?.contextInfo
-?.mentionedJid || [];
+contextInfo?.mentionedJid || [];
 
 
 for (const jid of mentioned) {
@@ -217,13 +238,9 @@ for (const jid of mentioned) {
         afkData[jid];
 
 
-        const waktu =
-        Date.now() - data.waktu;
-
-
         const menit =
         Math.floor(
-            waktu / 60000
+            (Date.now() - data.waktu) / 60000
         );
 
 
@@ -233,8 +250,7 @@ for (const jid of mentioned) {
                 text:
 `💤 *USER SEDANG AFK*
 
-👤 User:
-@${jid.split('@')[0]}
+👤 @${jid.split('@')[0]}
 
 📝 Alasan:
 ${data.alasan}
@@ -244,14 +260,20 @@ ${menit} menit lalu`,
                 mentions: [jid]
             },
             {
-                quoted:m
+                quoted: m
             }
         );
+
+        break;
 
     }
 
 }
-        // ==================
+
+
+
+
+        
         
         // FIX GROUP DETECT
         const isGroup =
