@@ -199,6 +199,59 @@ Status AFK kamu sudah dihapus.`
 
 }
         // ====================
+        // =========================
+// CEK MENTION USER AFK
+// =========================
+
+const mentioned =
+m.message?.extendedTextMessage
+?.contextInfo
+?.mentionedJid || [];
+
+
+for (const jid of mentioned) {
+
+    if (afkData[jid]) {
+
+        const data =
+        afkData[jid];
+
+
+        const waktu =
+        Date.now() - data.waktu;
+
+
+        const menit =
+        Math.floor(
+            waktu / 60000
+        );
+
+
+        await sock.sendMessage(
+            sender,
+            {
+                text:
+`💤 *USER SEDANG AFK*
+
+👤 User:
+@${jid.split('@')[0]}
+
+📝 Alasan:
+${data.alasan}
+
+⏰ Sejak:
+${menit} menit lalu`,
+                mentions: [jid]
+            },
+            {
+                quoted:m
+            }
+        );
+
+    }
+
+}
+        // ==================
         
         // FIX GROUP DETECT
         const isGroup =
