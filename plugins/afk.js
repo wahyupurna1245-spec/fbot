@@ -19,7 +19,9 @@ function loadAFK() {
         }
 
         return JSON.parse(
-            fs.readFileSync(afkFile)
+            fs.readFileSync(
+                afkFile
+            )
         );
 
     } catch {
@@ -54,13 +56,25 @@ module.exports = {
     ownerOnly: false,
 
 
-    operate: async ({ sock, m, sender, args }) => {
+    operate: async ({
+        sock,
+        m,
+        sender,
+        args
+    }) => {
+
 
         try {
 
 
+            const user =
+            m.key.participant ||
+            sender;
+
+
             const afk =
             loadAFK();
+
 
 
             const alasan =
@@ -69,7 +83,7 @@ module.exports = {
 
 
 
-            afk[sender] = {
+            afk[user] = {
 
                 alasan,
 
@@ -80,7 +94,9 @@ module.exports = {
 
 
 
-            saveAFK(afk);
+            saveAFK(
+                afk
+            );
 
 
 
@@ -90,11 +106,17 @@ module.exports = {
                     text:
 `💤 *AFK AKTIF*
 
-Alasan:
+👤 User:
+@${user.split('@')[0]}
+
+📝 Alasan:
 ${alasan}
 
-Jika kamu mengirim pesan lagi,
-status AFK akan dihapus otomatis.`
+⏰ Waktu:
+${new Date().toLocaleString('id-ID')}`,
+                    mentions:[
+                        user
+                    ]
                 },
                 {
                     quoted:m
@@ -105,7 +127,7 @@ status AFK akan dihapus otomatis.`
         } catch(err) {
 
             console.log(
-                'AFK Plugin Error:',
+                'AFK Error:',
                 err
             );
 
