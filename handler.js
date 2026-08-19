@@ -112,12 +112,11 @@ module.exports = async (sock, mek, chatUpdate) => {
             ? body
             : '';
         const prefix =
-    budy.match(
-        /^[°•π÷×¶∆£¢€¥®™_=|~!?#/$%^&.+¬]/
-    )?.[0] || '';
-
-const isCmd =
-    prefix !== '' && budy.startsWith(prefix);
+            budy.match(
+                /^[°•π÷×¶∆£¢€¥®™_=|~!?#/$%^&.+¬]/
+            )?.[0] || '';
+        const isCmd =
+            budy.startsWith(prefix);
         const command =
             isCmd
             ? budy
