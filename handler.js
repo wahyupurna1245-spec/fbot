@@ -396,19 +396,6 @@ Pesan link dihapus.`
             mode.privateOnly &&
             isGroup
         ) return;
-// =========================
-// AUTO TYPING
-// =========================
-if (
-    settings.autoTyping &&
-    isCmd &&
-    commands.includes(command)
-) {
-    await sock.sendPresenceUpdate(
-        'composing',
-        sender
-    );
-}
         // =========================
         // LOAD PLUGIN
         // =========================
@@ -448,6 +435,52 @@ if (
                 }
             }
         }
+// =========================
+// AUTO TYPING VALID COMMAND
+// =========================
+if (
+    settings.autoTyping &&
+    isCmd
+) {
+
+    let validCommand = false;
+
+    for (const name in plugins) {
+
+        const plugin = plugins[name];
+
+        if (
+            typeof plugin.command === 'string' &&
+            plugin.command.toLowerCase() === command
+        ) {
+            validCommand = true;
+            break;
+        }
+
+        if (
+            Array.isArray(plugin.command) &&
+            plugin.command
+                .map(v => v.toLowerCase())
+                .includes(command)
+        ) {
+            validCommand = true;
+            break;
+        }
+    }
+
+    if (validCommand) {
+
+        try {
+
+            await sock.sendPresenceUpdate(
+                'composing',
+                sender
+            );
+
+        } catch {}
+
+    }
+}
         // =========================
         // RUN PLUGIN
         // =========================
