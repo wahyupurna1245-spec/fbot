@@ -396,18 +396,19 @@ Pesan link dihapus.`
             mode.privateOnly &&
             isGroup
         ) return;
-        // =========================
-        // AUTO TYPING
-        // =========================
-        if (
-            settings.autoTyping &&
-            isCmd
-        ) {
-            await sock.sendPresenceUpdate(
-                'composing',
-                sender
-            );
-        }
+// =========================
+// AUTO TYPING
+// =========================
+if (
+    settings.autoTyping &&
+    isCmd &&
+    commands.includes(command)
+) {
+    await sock.sendPresenceUpdate(
+        'composing',
+        sender
+    );
+}
         // =========================
         // LOAD PLUGIN
         // =========================
