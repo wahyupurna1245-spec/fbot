@@ -239,7 +239,7 @@ if(isCmd && !isOwner){
             sender,
             {
                 react:{
-                    text:'⏳',
+                    text:'',
                     key:m.key
                 }
             }
